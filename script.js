@@ -1,4 +1,4 @@
-// ১. ফায়ারবেস কনফিগারেশন বসান (Firebase Console থেকে পাওয়া তথ্য)
+// ১. ফায়ারবেস কনফিগারেশন বসান (Firebase Console থেকে পাওয়া তথ্য)
 const firebaseConfig = {
   apiKey: "AIzaSyCHahXJJwiBvr9ucSa9qwBTA7z4jbl71BE",
   authDomain: "myprivatechat-8f590.firebaseapp.com",
@@ -16,27 +16,36 @@ const database = firebase.database();
 let currentUser = null;
 let selectedMessageIds = [];
 let replyingToMessage = null;
+let isSelectingFile = false; // গ্যালারি খোলার সময় ফ্ল্যাগ চেক করার জন্য
 
-// ১. পাসওয়ার্ড মুছে ফেলা ও স্ক্রিন লকে অটো-লগআউট
+// ১. পাসওয়ার্ড মুছে ফেলা ও স্ক্রিন লকে অটো-লগআউট
 function logout() {
   auth.signOut().then(() => {
-    document.getElementById("password").value = ""; // পাসওয়ার্ড ইনপুট ফিল্ড খালি করা
+    document.getElementById("password").value = ""; // পাসওয়ার্ড ইনপুট ফিল্ড খালি করা
   });
 }
 
-// স্ক্রিন লক বা অ্যাপ মিনিমাইজ হলে লগআউট
+// স্ক্রিন লক বা অ্যাপ মিনিমাইজ হলে লগআউট (ফাইল সিলেক্ট করার সময় ছাড় দেওয়া হবে)
 document.addEventListener("visibilitychange", function() {
-  if (document.hidden) {
+  if (document.hidden && !isSelectingFile) {
     logout();
   }
 });
 
-// উইন্ডো ফোকাস চলে গেলেও লগআউট (অতিরিক্ত নিরাপত্তা)
+// উইন্ডো ফোকাস চলে গেলেও লগআউট (ফাইল সিলেক্ট করার সময় ছাড়া)
 window.addEventListener("blur", function() {
-  logout();
+  if (!isSelectingFile) {
+    logout();
+  }
 });
 
-// ২. লগইন সার্ভিস
+// ২. ফাইল ইনপুট ট্রিগার ফাংশন (গ্যালারি খোলার সময় অটো-লগআউট পজ রাখবে)
+function triggerFileInput() {
+  isSelectingFile = true;
+  document.getElementById("file-input").click();
+}
+
+// ৩. লগইন সার্ভিস
 function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -45,7 +54,7 @@ function login() {
   auth.signInWithEmailAndPassword(email, password)
     .then(() => {
       errorElement.innerText = "";
-      document.getElementById("password").value = ""; // সফল লগইনের পর পাসওয়ার্ড রিসেট
+      document.getElementById("password").value = ""; // সফল লগইনের পর পাসওয়ার্ড রিসেট
     })
     .catch((error) => {
       errorElement.innerText = "লগইন ব্যর্থ হয়েছে!";
@@ -68,9 +77,15 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-// ৩. গ্যালারি থেকে ছবি ও ভিডিও পাঠাল রূপান্তর (Base64)
+// ৪. গ্যালারি থেকে ছবি ও ভিডিও রূপান্তর (Base64)
 function handleFileUpload(event) {
   const file = event.target.files[0];
+
+  // ফাইল সিলেকশন শেষ হওয়ার পর সেফটি টাইমআউট
+  setTimeout(() => {
+    isSelectingFile = false;
+  }, 1000);
+
   if (!file) return;
 
   const reader = new FileReader();
@@ -96,7 +111,7 @@ function sendMediaMessage(fileData, fileType) {
   cancelReply();
 }
 
-// ৪. মেসেজ পাঠানো (টেক্সট, ইউটিউব/রিলস লিংক, এবং রিপ্লাইসহ)
+// ৫. মেসেজ পাঠানো (টেক্সট, ইউটিউব/রিলস লিংক, এবং রিপ্লাইসহ)
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
@@ -115,17 +130,20 @@ function sendMessage() {
   }
 }
 
-// ৫. রিয়েলটাইম মেসেজ লোড ও রেন্ডারিং
+// ৬. রিয়েলটাইম মেসেজ লোড ও রেন্ডারিং
 function loadMessages() {
   const messagesContainer = document.getElementById("messages-container");
+
   database.ref("messages").on("value", (snapshot) => {
     messagesContainer.innerHTML = "";
+
     snapshot.forEach((childSnapshot) => {
       const msgKey = childSnapshot.key;
       const msgData = childSnapshot.val();
 
       const msgDiv = document.createElement("div");
       const isMe = msgData.senderUid === currentUser.uid;
+
       msgDiv.classList.add("message", isMe ? "sent" : "received");
       msgDiv.setAttribute("data-key", msgKey);
 
@@ -136,7 +154,7 @@ function loadMessages() {
         contentHTML += `<div class="reply-quote">📌 ${msgData.replyTo}</div>`;
       }
 
-      // টেক্সট নাকি মিডিয়া তা পরোক্ষভাবে চেক
+      // টেক্সট নাকি মিডিয়া তা পরোক্ষভাবে চেক
       if (msgData.mediaType === "image") {
         contentHTML += `<img src="${msgData.mediaData}" class="media-preview-img">
                         <a href="${msgData.mediaData}" download="image.jpg" class="download-link">📥 ডাউনলোড করুন</a>`;
@@ -166,6 +184,7 @@ function loadMessages() {
 
       messagesContainer.appendChild(msgDiv);
     });
+
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   });
 }
@@ -177,7 +196,7 @@ function extractYouTubeId(url) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// ৬. ডানদিকে স্লাইড (Swipe Right) করে রিপ্লাই এবং সিলেকশন
+// ৭. ডানদিকে স্লাইড (Swipe Right) করে রিপ্লাই এবং সিলেকশন
 function addSwipeAndSelectEvents(element, msgKey, textPreview) {
   let startX = 0;
   let currentX = 0;
@@ -189,6 +208,7 @@ function addSwipeAndSelectEvents(element, msgKey, textPreview) {
   element.addEventListener("touchmove", (e) => {
     currentX = e.touches[0].clientX;
     let diff = currentX - startX;
+
     if (diff > 0 && diff < 80) { // ডানদিকে স্লাইড সীমা
       element.style.transform = `translateX(${diff}px)`;
     }
@@ -197,9 +217,11 @@ function addSwipeAndSelectEvents(element, msgKey, textPreview) {
   element.addEventListener("touchend", (e) => {
     let diff = currentX - startX;
     element.style.transform = `translateX(0px)`;
+
     if (diff > 50) { // স্লাইড সম্পন্ন হলে রিপ্লাই ট্রিগার
       setReply(textPreview);
     }
+
     startX = 0;
     currentX = 0;
   });
@@ -211,13 +233,15 @@ function addSwipeAndSelectEvents(element, msgKey, textPreview) {
       toggleSelectMessage(msgKey);
     }, 600);
   });
+
   element.addEventListener("touchend", () => clearTimeout(timer));
   element.addEventListener("touchmove", () => clearTimeout(timer));
 }
 
-// ৭. সিলেকশন ও ডিলিট অপশনস
+// ৮. সিলেকশন ও ডিলিট অপশনস
 function toggleSelectMessage(key) {
   const index = selectedMessageIds.indexOf(key);
+
   if (index > -1) {
     selectedMessageIds.splice(index, 1);
   } else {
@@ -225,12 +249,14 @@ function toggleSelectMessage(key) {
   }
 
   const selectionBar = document.getElementById("selection-bar");
+
   if (selectedMessageIds.length > 0) {
     selectionBar.classList.remove("hidden");
     document.getElementById("selected-count").innerText = `${selectedMessageIds.length} টি সিলেক্টেড`;
   } else {
     selectionBar.classList.add("hidden");
   }
+
   loadMessages();
 }
 
@@ -258,11 +284,11 @@ function clearAllMessages() {
   }
 }
 
-// ৮. রিপ্লাই ফাংশনালিটি
+// ৯. রিপ্লাই ফাংশনালিটি
 function setReply(text) {
   replyingToMessage = text;
   document.getElementById("reply-preview-bar").classList.remove("hidden");
-  document.getElementById("reply-text").innerText = `রিপ্লাই দেওয়া হচ্ছে: ${text}`;
+  document.getElementById("reply-text").innerText = `রিপ্লাই দেওয়া হচ্ছে: ${text}`;
 }
 
 function cancelReply() {
