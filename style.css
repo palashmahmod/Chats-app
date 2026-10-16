@@ -1,0 +1,207 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background-color: #e5ddd5;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+.screen {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Login Styles */
+#login-screen {
+  padding: 20px;
+  justify-content: center;
+}
+
+#login-screen h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #075e54;
+}
+
+#login-screen input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+#login-screen button {
+  padding: 12px;
+  background: #075e54;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+#auth-error {
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Chat Styles */
+.chat-header {
+  background: #075e54;
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header button {
+  background: #dc3545;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+#messages-container {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background-color: #efeae2;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  max-width: 75%;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  position: relative;
+  word-wrap: break-word;
+}
+
+.message.sent {
+  align-self: flex-end;
+  background: #dcf8c6;
+}
+
+.message.received {
+  align-self: flex-start;
+  background: #ffffff;
+}
+
+.delete-btn {
+  font-size: 10px;
+  color: red;
+  cursor: pointer;
+  margin-left: 10px;
+  float: right;
+  margin-top: 2px;
+}
+
+.chat-input-area {
+  display: flex;
+  padding: 10px;
+  background: #f0f0f0;
+}
+
+.chat-input-area input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  outline: none;
+}
+
+.chat-input-area button {
+  margin-left: 8px;
+  padding: 10px 15px;
+  background: #075e54;
+  color: white;
+  border: none;
+  border-radius: 50%;
+}
+
+/* রিপ্লাই এবং সিলেকশন বার */
+.reply-bar, .selection-bar {
+  background: #e1f5fe;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid #0288d1;
+  font-size: 13px;
+}
+
+.selection-bar {
+  background: #ffebee;
+  border-left-color: #d32f2f;
+}
+
+.selected-message {
+  border: 2px solid #075e54 !important;
+  background-color: #c8e6c9 !important;
+}
+
+/* স্লাইড করে রিপ্লাই অ্যানিমেশন */
+.message {
+  touch-action: pan-y;
+  transition: transform 0.2s ease;
+}
+
+.reply-quote {
+  background: rgba(0,0,0,0.08);
+  padding: 4px 8px;
+  border-left: 3px solid #075e54;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+/* মিডিয়া মেসেজ (ছবি, ভিডিও, রিলস) */
+.media-preview-img, .media-preview-video {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  display: block;
+  margin-top: 5px;
+}
+
+.media-btn {
+  font-size: 20px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.download-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #0288d1;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.video-embed {
+  width: 100%;
+  height: 200px;
+  border: none;
+  border-radius: 8px;
+  margin-top: 5px;
+}
