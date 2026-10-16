@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>প্রাইভেট চ্যাট</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+  <!-- লগইন সেকশন -->
+  <div id="login-screen" class="screen">
+    <h2>লগইন করুন</h2>
+    <input type="email" id="email" placeholder="ইমেইল দিন">
+    <input type="password" id="password" placeholder="পাসওয়ার্ড দিন">
+    <button onclick="login()">লগইন</button>
+    <p id="auth-error"></p>
+  </div>
+
+  <!-- চ্যাট সেকশন -->
+  <div id="chat-screen" class="screen hidden">
+    <div class="chat-header">
+      <span id="user-display">চ্যাট রুম</span>
+      <button onclick="logout()">লগআউট</button>
+    </div>
+    <div id="messages-container"></div>
+    <div class="chat-input-area">
+  <!-- ফাইল/মিডিয়া যুক্ত করার বাটন -->
+  <label for="file-input" class="media-btn">📎</label>
+  <input type="file" id="file-input" accept="image/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
+  
+  <input type="text" id="message-input" placeholder="মেসেজ বা ভিডিও লিংক লিখুন...">
+  <button onclick="sendMessage()">পাঠান</button>
+</div>
+
+<!-- নির্বাচিত মেসেজ ডিলিট ও রিপ্লাই বার (হিডেন থাকবে) -->
+<div id="selection-bar" class="selection-bar hidden">
+  <span id="selected-count">০ টি সিলেক্টেড</span>
+  <div>
+    <button onclick="deleteSelectedMessages()">🗑️ নির্বাচিতগুলো ডিলিট</button>
+    <button onclick="clearAllMessages()">🔥 সব ক্লিয়ার</button>
+    <button onclick="cancelSelection()">✖️ বাতিল</button>
+  </div>
+</div>
+
+<!-- রিপ্লাই প্রিভিউ বার -->
+<div id="reply-preview-bar" class="reply-bar hidden">
+  <div id="reply-text"></div>
+  <button onclick="cancelReply()">✖️</button>
+</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
