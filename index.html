@@ -29,10 +29,8 @@
     </div>
     <div id="messages-container"></div>
     <div class="chat-input-area">
-  <!-- ফাইল/মিডিয়া যুক্ত করার বাটন -->
-  <label for="file-input" class="media-btn">📎</label>
+  <span class="media-btn" onclick="triggerFileInput()">📎</span>
   <input type="file" id="file-input" accept="image/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
-  
   <input type="text" id="message-input" placeholder="মেসেজ বা ভিডিও লিংক লিখুন...">
   <button onclick="sendMessage()">পাঠান</button>
 </div>
