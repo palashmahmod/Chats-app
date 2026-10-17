@@ -205,3 +205,52 @@ body {
   border-radius: 8px;
   margin-top: 5px;
 }
+
+/* মেসেজের সময় ও টিক চিহ্ন */
+.msg-footer {
+  font-size: 10px;
+  color: #888;
+  text-align: right;
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.seen-tick {
+  color: #34b7f1;
+  font-weight: bold;
+}
+
+.unseen-tick {
+  color: #aaa;
+}
+
+/* মুছে ফেলা মেসেজের স্টাইল */
+.deleted-msg {
+  font-style: italic;
+  color: #777 !important;
+}
+
+/* অনলাইন ও লাস্ট সিন হেডার */
+.user-status-text {
+  font-size: 11px;
+  display: block;
+  font-weight: normal;
+  opacity: 0.9;
+}
+
+/* রিপ্লাই মেসেজ হাইলাইট অ্যানিমেশন */
+.highlight-message {
+  animation: highlightAnim 1.5s ease-in-out;
+}
+
+@keyframes highlightAnim {
+  0% { background-color: #fff59d; transform: scale(1.02); }
+  100% { background-color: inherit; transform: scale(1); }
+}
+
+.reply-quote {
+  cursor: pointer; /* ক্লিক করার যোগ্য করার জন্য */
+}
