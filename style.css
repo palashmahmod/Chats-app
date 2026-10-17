@@ -10,6 +10,7 @@ body {
   height: 100vh;
   display: flex;
   justify-content: center;
+  overflow: hidden; /* পুরো পেজের স্ক্রোল বন্ধ করা হলো */
 }
 
 .screen {
@@ -19,13 +20,14 @@ body {
   background: #fff;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .hidden {
   display: none !important;
 }
 
-/* Login Styles */
+/* ১. লগইন পেজ স্টাইল */
 #login-screen {
   padding: 20px;
   justify-content: center;
@@ -60,14 +62,19 @@ body {
   text-align: center;
 }
 
-/* Chat Styles */
+/* ২. চ্যাট পেজ স্টাইল (Header & Footer Frozen) */
+
+/* উপরে হেডার ফ্রিজ থাকবে */
 .chat-header {
   background: #075e54;
   color: white;
-  padding: 15px;
+  padding: 12px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* হেডার ছোট বা সংকুচিত হবে না */
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .chat-header button {
@@ -76,49 +83,35 @@ body {
   color: white;
   padding: 6px 12px;
   border-radius: 4px;
+  cursor: pointer;
 }
 
+.user-status-text {
+  font-size: 11px;
+  display: block;
+  font-weight: normal;
+  opacity: 0.9;
+}
+
+/* শুধুমাত্র মাঝখানের মেসেজ বক্স স্ক্রোল হবে */
 #messages-container {
   flex: 1;
   padding: 15px;
-  overflow-y: auto;
+  overflow-y: auto; /* শুধু এখানে স্ক্রোল বার থাকবে */
   background-color: #efeae2;
   display: flex;
   flex-direction: column;
 }
 
-.message {
-  max-width: 75%;
-  padding: 8px 12px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  position: relative;
-  word-wrap: break-word;
-}
-
-.message.sent {
-  align-self: flex-end;
-  background: #dcf8c6;
-}
-
-.message.received {
-  align-self: flex-start;
-  background: #ffffff;
-}
-
-.delete-btn {
-  font-size: 10px;
-  color: red;
-  cursor: pointer;
-  margin-left: 10px;
-  float: right;
-  margin-top: 2px;
-}
-
+/* ৩. নিচে ইনপুট এরিয়া ও বারসমূহ ফ্রিজ থাকবে */
 .chat-input-area {
   display: flex;
+  align-items: center;
   padding: 10px;
   background: #f0f0f0;
+  flex-shrink: 0; /* ইনপুট বক্স সবসময় নির্দিষ্ট স্থানে জমে থাকবে */
+  z-index: 10;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
 }
 
 .chat-input-area input {
@@ -136,9 +129,10 @@ body {
   color: white;
   border: none;
   border-radius: 50%;
+  cursor: pointer;
 }
 
-/* রিপ্লাই এবং সিলেকশন বার */
+/* নিচে রিপ্লাই এবং সিলেকশন বার (ফ্রিজ থাকবে) */
 .reply-bar, .selection-bar {
   background: #e1f5fe;
   padding: 8px 12px;
@@ -147,6 +141,8 @@ body {
   align-items: center;
   border-left: 4px solid #0288d1;
   font-size: 13px;
+  flex-shrink: 0;
+  z-index: 9;
 }
 
 .selection-bar {
@@ -154,15 +150,64 @@ body {
   border-left-color: #d32f2f;
 }
 
+.selection-bar button, .reply-bar button {
+  background: none;
+  border: none;
+  color: #d32f2f;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* ৪. মেসেজ আইটেমস স্টাইল */
+.message {
+  max-width: 75%;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  position: relative;
+  word-wrap: break-word;
+  touch-action: pan-y;
+  transition: transform 0.2s ease;
+}
+
+.message.sent {
+  align-self: flex-end;
+  background: #dcf8c6;
+}
+
+.message.received {
+  align-self: flex-start;
+  background: #ffffff;
+}
+
 .selected-message {
   border: 2px solid #075e54 !important;
   background-color: #c8e6c9 !important;
 }
 
-/* স্লাইড করে রিপ্লাই অ্যানিমেশন */
-.message {
-  touch-action: pan-y;
-  transition: transform 0.2s ease;
+.msg-footer {
+  font-size: 10px;
+  color: #888;
+  text-align: right;
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.seen-tick {
+  color: #34b7f1;
+  font-weight: bold;
+}
+
+.unseen-tick {
+  color: #aaa;
+}
+
+.deleted-msg {
+  font-style: italic;
+  color: #777 !important;
 }
 
 .reply-quote {
@@ -172,9 +217,9 @@ body {
   border-radius: 4px;
   font-size: 12px;
   margin-bottom: 5px;
+  cursor: pointer;
 }
 
-/* মিডিয়া মেসেজ (ছবি, ভিডিও, রিলস) */
 .media-preview-img, .media-preview-video {
   max-width: 100%;
   max-height: 250px;
@@ -206,42 +251,6 @@ body {
   margin-top: 5px;
 }
 
-/* মেসেজের সময় ও টিক চিহ্ন */
-.msg-footer {
-  font-size: 10px;
-  color: #888;
-  text-align: right;
-  margin-top: 4px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px;
-}
-
-.seen-tick {
-  color: #34b7f1;
-  font-weight: bold;
-}
-
-.unseen-tick {
-  color: #aaa;
-}
-
-/* মুছে ফেলা মেসেজের স্টাইল */
-.deleted-msg {
-  font-style: italic;
-  color: #777 !important;
-}
-
-/* অনলাইন ও লাস্ট সিন হেডার */
-.user-status-text {
-  font-size: 11px;
-  display: block;
-  font-weight: normal;
-  opacity: 0.9;
-}
-
-/* রিপ্লাই মেসেজ হাইলাইট অ্যানিমেশন */
 .highlight-message {
   animation: highlightAnim 1.5s ease-in-out;
 }
@@ -249,8 +258,4 @@ body {
 @keyframes highlightAnim {
   0% { background-color: #fff59d; transform: scale(1.02); }
   100% { background-color: inherit; transform: scale(1); }
-}
-
-.reply-quote {
-  cursor: pointer; /* ক্লিক করার যোগ্য করার জন্য */
 }
