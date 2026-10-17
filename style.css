@@ -17,6 +17,7 @@ body {
   width: 100%;
   max-width: 480px;
   height: 100vh;
+  height: -webkit-fill-available; /* আইফোন ও নতুন অ্যান্ড্রয়েড ব্রাউজারের ফুল হাইট সমস্যার জন্য */
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -107,11 +108,12 @@ body {
 .chat-input-area {
   display: flex;
   align-items: center;
-  padding: 10px;
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; /* মোবাইলের নিচের বাটনগুলোর উপরে প্যাডিং দেবে */
   background: #f0f0f0;
-  flex-shrink: 0; /* ইনপুট বক্স সবসময় নির্দিষ্ট স্থানে জমে থাকবে */
+  flex-shrink: 0;
   z-index: 10;
   box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+  margin-bottom: 10px; /* অতিরিক্ত সেফটি মার্জিন */
 }
 
 .chat-input-area input {
