@@ -113,7 +113,7 @@ body {
   flex-shrink: 0;
   z-index: 10;
   box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-  margin-bottom: 25px; /* অতিরিক্ত সেফটি মার্জিন */
+  margin-bottom: 50px; /* অতিরিক্ত সেফটি মার্জিন */
 }
 
 .chat-input-area input {
