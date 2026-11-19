@@ -153,6 +153,9 @@ function sendMediaMessage(fileData, fileType) {
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
+  input.style.height = "auto";
+  // মেসেজ পাঠানোর পর বক্সটি আবার আগের মতো ছোট হয়ে যাবে 
+  cancelReply();
 
   if (text !== "" && currentUser) {
     const messageRef = database.ref("messages").push();
@@ -341,3 +344,5 @@ function cancelReply() {
   replyingToMsgKey = null;
   document.getElementById("reply-preview-bar").classList.add("hidden");
 }
+// টেক্সটএরিয়া অটো-রিসাইজ ফাংশন 
+function autoResizeTextarea(el) { el.style.height = "auto"; el.style.height = (el.scrollHeight) + "px"; }
