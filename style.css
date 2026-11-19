@@ -5,23 +5,24 @@
   font-family: Arial, sans-serif;
 }
 
-body {
+html, body {
   background-color: #e5ddd5;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
   display: flex;
   justify-content: center;
-  overflow: hidden; /* পুরো পেজের স্ক্রোল বন্ধ করা হলো */
 }
 
 .screen {
   width: 100%;
   max-width: 480px;
-  height: 100vh;
-  height: -webkit-fill-available; /* আইফোন ও নতুন অ্যান্ড্রয়েড ব্রাউজারের ফুল হাইট সমস্যার জন্য */
+  height: 100dvh; /* মোবাইলের স্ক্রিন ও কিবোর্ডের সাথে অটো এডজাস্ট হবে */
   background: #fff;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
 .hidden {
@@ -63,9 +64,7 @@ body {
   text-align: center;
 }
 
-/* ২. চ্যাট পেজ স্টাইল (Header & Footer Frozen) */
-
-/* উপরে হেডার ফ্রিজ থাকবে */
+/* ২. উপরে ফ্রিজ থাকা হেডার */
 .chat-header {
   background: #075e54;
   color: white;
@@ -73,9 +72,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* হেডার ছোট বা সংকুচিত হবে না */
-  z-index: 10;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  z-index: 20;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }
 
 .chat-header button {
@@ -84,6 +83,7 @@ body {
   color: white;
   padding: 6px 12px;
   border-radius: 4px;
+  font-weight: bold;
   cursor: pointer;
 }
 
@@ -94,48 +94,18 @@ body {
   opacity: 0.9;
 }
 
-/* শুধুমাত্র মাঝখানের মেসেজ বক্স স্ক্রোল হবে */
+/* ৩. মাঝখানের মেসেজ বক্স */
 #messages-container {
   flex: 1;
   padding: 15px;
-  overflow-y: auto; /* শুধু এখানে স্ক্রোল বার থাকবে */
+  overflow-y: auto;
   background-color: #efeae2;
   display: flex;
   flex-direction: column;
 }
 
-/* ৩. নিচে ইনপুট এরিয়া ও বারসমূহ ফ্রিজ থাকবে */
-.chat-input-area {
-  display: flex;
-  align-items: center;
-  padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px; /* মোবাইলের নিচের বাটনগুলোর উপরে প্যাডিং দেবে */
-  background: #f0f0f0;
-  flex-shrink: 0;
-  z-index: 10;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-  margin-bottom: 50px; /* অতিরিক্ত সেফটি মার্জিন */
-}
-
-.chat-input-area input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  outline: none;
-}
-
-.chat-input-area button {
-  margin-left: 8px;
-  padding: 10px 15px;
-  background: #075e54;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* নিচে রিপ্লাই এবং সিলেকশন বার (ফ্রিজ থাকবে) */
-.reply-bar, .selection-bar {
+/* ৪. রিপ্লাই প্রিভিউ বার (বাতিল করার বাটনসহ) */
+.reply-bar {
   background: #e1f5fe;
   padding: 8px 12px;
   display: flex;
@@ -144,25 +114,106 @@ body {
   border-left: 4px solid #0288d1;
   font-size: 13px;
   flex-shrink: 0;
-  z-index: 9;
+  z-index: 15;
 }
 
+#reply-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 85%;
+  color: #333;
+}
+
+.cancel-reply-btn {
+  background: #ff5252;
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* সিলেকশন বার */
 .selection-bar {
   background: #ffebee;
-  border-left-color: #d32f2f;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid #d32f2f;
+  font-size: 13px;
+  flex-shrink: 0;
+  z-index: 15;
 }
 
-.selection-bar button, .reply-bar button {
+.selection-bar button {
   background: none;
   border: none;
   color: #d32f2f;
   cursor: pointer;
   font-weight: bold;
+  margin-left: 8px;
 }
 
-/* ৪. মেসেজ আইটেমস স্টাইল */
+/* ৫. নিচে ফ্রিজ থাকা মেসেজ লেখার বক্স (Textarea সহ) */
+.chat-input-area {
+  display: flex;
+  align-items: flex-end;
+  padding: 8px 10px calc(12px + env(safe-area-inset-bottom)) 10px;
+  background: #f0f0f0;
+  flex-shrink: 0;
+  z-index: 20;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+  margin-bottom: 12px;
+}
+
+.chat-input-area textarea {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  outline: none;
+  resize: none;
+  max-height: 100px; /* সর্বোচ্চ ৪-৫ লাইন পর্যন্ত বড় হবে, এরপর স্ক্রোল হবে */
+  font-size: 15px;
+  line-height: 1.3;
+  overflow-y: auto;
+}
+
+.send-btn {
+  margin-left: 8px;
+  width: 40px;
+  height: 40px;
+  background: #075e54;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-btn {
+  font-size: 22px;
+  padding: 6px 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ৬. মেসেজ আইটেমস স্টাইল */
 .message {
-  max-width: 75%;
+  max-width: 78%;
   padding: 8px 12px;
   margin-bottom: 10px;
   border-radius: 8px;
@@ -170,6 +221,10 @@ body {
   word-wrap: break-word;
   touch-action: pan-y;
   transition: transform 0.2s ease;
+}
+
+.message p {
+  white-space: pre-wrap; /* এন্টার দিয়ে নিচের লাইনে লেখা টেক্সট ঠিকঠাক দেখাবে */
 }
 
 .message.sent {
@@ -228,12 +283,6 @@ body {
   border-radius: 8px;
   display: block;
   margin-top: 5px;
-}
-
-.media-btn {
-  font-size: 20px;
-  padding: 5px 10px;
-  cursor: pointer;
 }
 
 .download-link {
