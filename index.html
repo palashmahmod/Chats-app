@@ -11,12 +11,14 @@
 </head>
 <body>
 
-  <!-- লগইন সেকশন -->
+  <!-- লগইন সেকশন (গুগল অটোফিল ও সেভ পপ-আপ মুক্ত) -->
   <div id="login-screen" class="screen">
     <h2>লগইন করুন</h2>
-    <input type="email" id="email" placeholder="ইমেইল দিন">
-    <input type="password" id="password" placeholder="পাসওয়ার্ড দিন">
-    <button onclick="login()">লগইন</button>
+    <input type="text" id="email" name="user_login_field_x9" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');" placeholder="ইমেইল দিন">
+    
+    <input type="text" id="password" class="masked-password" name="user_secret_field_z4" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');" placeholder="পাসওয়ার্ড দিন">
+    
+    <button type="button" onclick="login()">লগইন</button>
     <p id="auth-error"></p>
   </div>
 
@@ -29,12 +31,12 @@
       <button onclick="logout()">লগআউট</button>
     </div>
 
-    <!-- ২. হেডারের ঠিক নিচে সিলেকশন ও ডিলিট বার -->
+    <!-- ২. হেডারের নিচে সিলেকশন ও ডিলিট বার -->
     <div id="selection-bar" class="selection-bar hidden">
       <span id="selected-count">০ টি</span>
       <div class="selection-actions">
+        <button id="select-all-btn" onclick="toggleSelectAll()">☑️ All</button>
         <button onclick="deleteSelectedMessages()">🗑️ ডিলিট</button>
-        <button onclick="clearAllMessages()">🔥 সব ডিলিট</button>
         <button onclick="cancelSelection()">✖ বাতিল</button>
       </div>
     </div>
@@ -42,7 +44,7 @@
     <!-- ৩. মাঝখানের মেসেজ বক্স -->
     <div id="messages-container"></div>
 
-    <!-- ৪. মেসেজ লেখার বক্সের ঠিক উপরে রিপ্লাই প্রিভিউ (সর্বোচ্চ ২ লাইন) -->
+    <!-- ৪. মেসেজ লেখার বক্সের ঠিক উপরে রিপ্লাই প্রিভিউ -->
     <div id="reply-preview-bar" class="reply-bar hidden">
       <div class="reply-content">
         <small>রিপ্লাই দেওয়া হচ্ছে:</small>
