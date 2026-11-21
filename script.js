@@ -15,29 +15,43 @@ const database = firebase.database();
 
 let currentUser = null;
 let selectedMessageIds = [];
+let allVisibleMessageIds = [];
+let isSelectionMode = false;
 let replyingToMessage = null;
 let replyingToMsgKey = null;
 let isSelectingFile = false;
 
-// সময় ফরম্যাট করার ফাংশন (e.g. 10:30 AM)
+// সময় ফরম্যাট করার ফাংশন
 function formatTime(timestamp) {
   if (!timestamp) return "";
   const date = new Date(timestamp);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// ২. পাসওয়ার্ড মুছে ফেলা ও অটো-লগআউট + অফলাইন স্টেট সেটিং
+// ২. লগআউট ও ইনপুট ফিল্ড ক্লিয়ার রাখা
 function logout() {
   if (currentUser) {
-    // অফলাইন স্ট্যাটাস আপডেট
     database.ref("users/" + currentUser.uid).update({
       status: "Offline",
       lastSeen: Date.now()
     });
   }
   auth.signOut().then(() => {
-    document.getElementById("password").value = "";
+    clearLoginInputs();
   });
+}
+
+function clearLoginInputs() {
+  const emailEl = document.getElementById("email");
+  const passEl = document.getElementById("password");
+  if (emailEl) {
+    emailEl.value = "";
+    emailEl.setAttribute("readonly", "true");
+  }
+  if (passEl) {
+    passEl.value = "";
+    passEl.setAttribute("readonly", "true");
+  }
 }
 
 document.addEventListener("visibilitychange", function() {
@@ -58,29 +72,29 @@ function triggerFileInput() {
 }
 
 function login() {
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const errorElement = document.getElementById("auth-error");
 
   auth.signInWithEmailAndPassword(email, password)
     .then(() => {
       errorElement.innerText = "";
-      document.getElementById("password").value = "";
+      clearLoginInputs();
     })
-    .catch((error) => {
-      errorElement.innerText = "লগইন ব্যর্থ হয়েছে!";
+    .catch(() => {
+      errorElement.innerText = "লগইন ব্যর্থ হয়েছে! ইমেইল ও পাসওয়ার্ড চেক করুন।";
     });
 }
 
-// ৩. ইউজার স্টেট ও অনলাইন স্ট্যাটাস ট্র্যাকিং
+// ৩. ইউজার স্টেট ও অনলাইন স্ট্যাটাস
 auth.onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
+    clearLoginInputs();
     document.getElementById("login-screen").classList.add("hidden");
     document.getElementById("chat-screen").classList.remove("hidden");
     document.getElementById("user-display").innerText = user.email.split('@')[0];
 
-    // অনলাইন স্ট্যাটাস সেট করা
     database.ref("users/" + user.uid).set({
       email: user.email,
       status: "Online",
@@ -91,14 +105,13 @@ auth.onAuthStateChanged((user) => {
     loadMessages();
   } else {
     currentUser = null;
-    document.getElementById("password").value = "";
+    clearLoginInputs();
     document.getElementById("login-screen").classList.remove("hidden");
     document.getElementById("chat-screen").classList.add("hidden");
     document.getElementById("messages-container").innerHTML = "";
   }
 });
 
-// ৪. অপর ইউজারের অনলাইন/অফলাইন এবং লাস্ট সিন চেক করা
 function trackPartnerStatus() {
   database.ref("users").on("value", (snapshot) => {
     snapshot.forEach((childSnapshot) => {
@@ -117,7 +130,7 @@ function trackPartnerStatus() {
   });
 }
 
-// ৫. গ্যালারি ফাইল হ্যান্ডলিং
+// ৪. ফাইল আপলোড
 function handleFileUpload(event) {
   const file = event.target.files[0];
   setTimeout(() => { isSelectingFile = false; }, 1000);
@@ -149,13 +162,10 @@ function sendMediaMessage(fileData, fileType) {
   cancelReply();
 }
 
-// ৬. টেক্সট মেসেজ পাঠানো
+// ৫. মেসেজ পাঠানো
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
-  input.style.height = "auto";
-  // মেসেজ পাঠানোর পর বক্সটি আবার আগের মতো ছোট হয়ে যাবে 
-  cancelReply();
 
   if (text !== "" && currentUser) {
     const messageRef = database.ref("messages").push();
@@ -170,41 +180,72 @@ function sendMessage() {
       isDeleted: false
     });
     input.value = "";
+    input.style.height = "auto";
     cancelReply();
   }
 }
 
-// ৭. মেসেজ লোড করা ও "Seen" চিহ্ন আপডেট করা
+// ৬. রিয়েলটাইম মেসেজ লোড ও রেন্ডারিং
 function loadMessages() {
   const messagesContainer = document.getElementById("messages-container");
 
   database.ref("messages").on("value", (snapshot) => {
     messagesContainer.innerHTML = "";
+    allVisibleMessageIds = [];
 
     snapshot.forEach((childSnapshot) => {
       const msgKey = childSnapshot.key;
       const msgData = childSnapshot.val();
       const isMe = msgData.senderUid === currentUser.uid;
 
-      // অপর ইউজার মেসেজটি দেখলে Seen করা
       if (!isMe && !msgData.isSeen) {
         database.ref("messages/" + msgKey).update({ isSeen: true });
       }
 
+      if (!msgData.isDeleted) {
+        allVisibleMessageIds.push(msgKey);
+      }
+
+      // প্রতিটি মেসেজের জন্য রো (Row) তৈরি
+      const rowDiv = document.createElement("div");
+      rowDiv.classList.add("message-row", isMe ? "sent-row" : "received-row");
+
+      // সিলেকশন মোড চালু থাকলে গোল সিলেকশন বাটন দেখাবে
+      if (isSelectionMode && !msgData.isDeleted) {
+        const circleDiv = document.createElement("div");
+        circleDiv.classList.add("select-circle");
+        if (selectedMessageIds.includes(msgKey)) {
+          circleDiv.classList.add("checked");
+          circleDiv.innerText = "✓";
+        }
+        circleDiv.onclick = () => toggleSelectMessage(msgKey);
+        rowDiv.appendChild(circleDiv);
+      }
+
+      // বামপাশে ডিলিট আইকন (নিজের মেসেজের ক্ষেত্রে)
+      if (!isSelectionMode && !msgData.isDeleted && isMe) {
+        const delIcon = document.createElement("span");
+        delIcon.className = "msg-delete-icon";
+        delIcon.innerText = "🗑️";
+        delIcon.title = "ডিলিট নির্বাচন করুন";
+        delIcon.onclick = () => startSelectionWith(msgKey);
+        rowDiv.appendChild(delIcon);
+      }
+
+      // মূল মেসেজ বাবল
       const msgDiv = document.createElement("div");
       msgDiv.classList.add("message", isMe ? "sent" : "received");
       msgDiv.id = "msg-" + msgKey;
-      msgDiv.setAttribute("data-key", msgKey);
 
       let contentHTML = "";
 
-      // ডিলিট করা মেসেজের ক্ষেত্র
       if (msgData.isDeleted) {
         contentHTML = `<p class="deleted-msg">🚫 এই মেসেজটি মুছে ফেলা হয়েছে</p>`;
       } else {
-        // রিপ্লাই মেসেজ ফিল্ড
+        // রিপ্লাই করা মেসেজের উপরে আগের মেসেজের প্রিভিউ এবং ক্লিক করলে স্ক্রোল
         if (msgData.replyTo) {
-          contentHTML += `<div class="reply-quote" onclick="scrollToMessage('${msgData.replyToKey}')">📌 ${msgData.replyTo}</div>`;
+          const safeKey = msgData.replyToKey || "";
+          contentHTML += `<div class="reply-quote" onclick="scrollToMessage('${safeKey}')">📌 ${msgData.replyTo}</div>`;
         }
 
         if (msgData.mediaType === "image") {
@@ -223,10 +264,8 @@ function loadMessages() {
         }
       }
 
-      // টাইম ও সিন টিক মার্ক
       const timeStr = formatTime(msgData.timestamp);
       const tickHTML = isMe && !msgData.isDeleted ? (msgData.isSeen ? `<span class="seen-tick">✓✓</span>` : `<span class="unseen-tick">✓</span>`) : "";
-      
       contentHTML += `<div class="msg-footer"><span>${timeStr}</span> ${tickHTML}</div>`;
 
       msgDiv.innerHTML = contentHTML;
@@ -235,14 +274,37 @@ function loadMessages() {
         msgDiv.classList.add("selected-message");
       }
 
+      // ডানদিকে স্লাইড করে রিপ্লাই (লং-প্রেস ডিলিট বাদ দেওয়া হয়েছে যাতে টেক্সট কপি করা যায়)
       if (!msgData.isDeleted) {
-        addSwipeAndSelectEvents(msgDiv, msgKey, msgData.text || "মিডিয়া ফাইল");
+        addSwipeReplyEvent(msgDiv, msgKey, msgData.text || "মিডিয়া ফাইল");
+        
+        // সিলেকশন মোড চালু থাকলে মেসেজে ক্লিক করলেও সিলেক্ট/আনসিলেক্ট হবে
+        msgDiv.addEventListener("click", (e) => {
+          if (isSelectionMode) {
+            e.stopPropagation();
+            toggleSelectMessage(msgKey);
+          }
+        });
       }
 
-      messagesContainer.appendChild(msgDiv);
+      rowDiv.appendChild(msgDiv);
+
+      // ডানপাশে ডিলিট আইকন (অপরজনের মেসেজের ক্ষেত্রে)
+      if (!isSelectionMode && !msgData.isDeleted && !isMe) {
+        const delIcon = document.createElement("span");
+        delIcon.className = "msg-delete-icon";
+        delIcon.innerText = "🗑️";
+        delIcon.title = "ডিলিট নির্বাচন করুন";
+        delIcon.onclick = () => startSelectionWith(msgKey);
+        rowDiv.appendChild(delIcon);
+      }
+
+      messagesContainer.appendChild(rowDiv);
     });
 
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    if (!isSelectionMode) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
   });
 }
 
@@ -252,89 +314,106 @@ function extractYouTubeId(url) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// ৮. রিপ্লাই বাটনে ক্লিক করলে স্ক্রোল করে নির্দিষ্ট মেসেজে নিয়ে যাওয়া
+// ৭. রিপ্লাই প্রিভিউতে ক্লিক করলে মূল মেসেজে গিয়ে হালকা ভিন্ন কালারে হাইলাইট করা
 function scrollToMessage(key) {
   if (!key) return;
   const targetElement = document.getElementById("msg-" + key);
   if (targetElement) {
     targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    targetElement.classList.remove("highlight-message");
+    void targetElement.offsetWidth; // এনিমেশন রিস্টার্ট করার জন্য
     targetElement.classList.add("highlight-message");
+    
     setTimeout(() => {
       targetElement.classList.remove("highlight-message");
-    }, 1500);
+    }, 2000);
   }
 }
 
-// ৯. স্লাইড করে রিপ্লাই, লং-প্রেস ও ট্যাপ করে সিলেকশন
-function addSwipeAndSelectEvents(element, msgKey, textPreview) {
+// ৮. শুধুমাত্র ডানদিকে স্লাইড করে রিপ্লাই (টেক্সট কপি বাধামুক্ত রাখা হয়েছে)
+function addSwipeReplyEvent(element, msgKey, textPreview) {
   let startX = 0;
+  let startY = 0;
   let currentX = 0;
-  let isLongPress = false;
-  let timer;
+  let isSwiping = false;
 
   element.addEventListener("touchstart", (e) => {
+    if (isSelectionMode) return;
     startX = e.touches[0].clientX;
-    isLongPress = false;
-    
-    // লং প্রেস করে প্রথম মেসেজ সিলেকশন
-    timer = setTimeout(() => {
-      isLongPress = true;
-      toggleSelectMessage(msgKey);
-    }, 500);
-  });
+    startY = e.touches[0].clientY;
+    isSwiping = false;
+  }, { passive: true });
 
   element.addEventListener("touchmove", (e) => {
-    clearTimeout(timer);
-    // সিলেকশন মোড চালু থাকলে স্লাইড বন্ধ থাকবে
-    if (selectedMessageIds.length > 0) return;
-
+    if (isSelectionMode) return;
     currentX = e.touches[0].clientX;
-    let diff = currentX - startX;
-    if (diff > 0 && diff < 80) {
-      element.style.transform = `translateX(${diff}px)`;
+    let currentY = e.touches[0].clientY;
+    let diffX = currentX - startX;
+    let diffY = Math.abs(currentY - startY);
+
+    // শুধুমাত্র ডানদিকে স্লাইড করলে কাজ করবে (উপর-নিচ স্ক্রোল বা টেক্সট সিলেকশনে বাধা দেবে না)
+    if (diffX > 15 && diffY < 25) {
+      isSwiping = true;
+      if (diffX < 80) {
+        element.style.transform = `translateX(${diffX}px)`;
+      }
     }
-  });
+  }, { passive: true });
 
   element.addEventListener("touchend", () => {
-    clearTimeout(timer);
-    let diff = currentX - startX;
+    if (isSelectionMode) return;
+    let diffX = currentX - startX;
     element.style.transform = `translateX(0px)`;
 
-    // স্লাইড সম্পন্ন হলে রিপ্লাই ট্রিগার
-    if (diff > 50 && selectedMessageIds.length === 0) {
+    if (isSwiping && diffX > 50) {
       setReply(textPreview, msgKey);
     }
 
     startX = 0;
     currentX = 0;
+    isSwiping = false;
   });
+}
 
-  // ইতিমধ্যে সিলেকশন চালু থাকলে সাধারণ ক্লিকেই বাকি মেসেজ সিলেক্ট/আনসিলেক্ট হবে
-  element.addEventListener("click", () => {
-    if (selectedMessageIds.length > 0 && !isLongPress) {
-      toggleSelectMessage(msgKey);
-    }
-  });
+// ৯. নতুন সিলেকশন ও ডিলিট সিস্টেম (ডিলিট চিহ্নে ক্লিক করলে চালু হবে)
+function startSelectionWith(key) {
+  isSelectionMode = true;
+  selectedMessageIds = [key];
+  history.pushState({ selectionMode: true }, "");
+  updateSelectionUI();
 }
 
 function toggleSelectMessage(key) {
   const index = selectedMessageIds.indexOf(key);
-  const wasEmpty = selectedMessageIds.length === 0;
-
   if (index > -1) {
     selectedMessageIds.splice(index, 1);
   } else {
     selectedMessageIds.push(key);
   }
+  updateSelectionUI();
+}
 
+function toggleSelectAll() {
+  if (selectedMessageIds.length === allVisibleMessageIds.length) {
+    selectedMessageIds = [];
+  } else {
+    selectedMessageIds = [...allVisibleMessageIds];
+  }
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
   const selectionBar = document.getElementById("selection-bar");
-  if (selectedMessageIds.length > 0) {
+  const selectAllBtn = document.getElementById("select-all-btn");
+
+  if (isSelectionMode) {
     selectionBar.classList.remove("hidden");
     document.getElementById("selected-count").innerText = `${selectedMessageIds.length} টি সিলেক্টেড`;
     
-    // প্রথমবার সিলেক্ট হলে ব্রাউজার হিস্ট্রিতে একটি স্টেট যোগ করা (ব্যাক বাটনের জন্য)
-    if (wasEmpty) {
-      history.pushState({ selectionMode: true }, "");
+    if (selectedMessageIds.length === allVisibleMessageIds.length && allVisibleMessageIds.length > 0) {
+      selectAllBtn.innerText = "⬜ Unselect All";
+    } else {
+      selectAllBtn.innerText = "☑️ All";
     }
   } else {
     selectionBar.classList.add("hidden");
@@ -343,36 +422,40 @@ function toggleSelectMessage(key) {
 }
 
 function cancelSelection() {
+  isSelectionMode = false;
   selectedMessageIds = [];
   document.getElementById("selection-bar").classList.add("hidden");
   loadMessages();
 }
 
-// মোবাইলের ব্যাক বাটন (Back Button) চাপলে সিলেকশন বাতিল হবে
-window.addEventListener("popstate", function(event) {
-  if (selectedMessageIds.length > 0) {
+// মোবাইলের ব্যাক বাটন চাপলে সিলেকশন বাতিল হবে
+window.addEventListener("popstate", function() {
+  if (isSelectionMode) {
     cancelSelection();
   }
 });
 
-// ১০. মুছে ফেলা (isDeleted: true করা)
+// ১০. নির্বাচিত বা সব মেসেজ ডিলিট করা
 function deleteSelectedMessages() {
-  if (confirm("সিলেক্ট করা মেসেজগুলো ডিলিট করতে চান?")) {
-    selectedMessageIds.forEach(key => {
-      database.ref("messages").child(key).update({ isDeleted: true, text: "", mediaData: "" });
-    });
+  if (selectedMessageIds.length === 0) {
+    alert("ডিলিট করার জন্য অন্তত একটি মেসেজ সিলেক্ট করুন।");
+    return;
+  }
+
+  if (confirm(`নির্বাচিত ${selectedMessageIds.length} টি মেসেজ ডিলিট করতে চান?`)) {
+    // সব মেসেজ সিলেক্ট করা থাকলে পুরো ডাটাবেস ক্লিয়ার হবে, নাহলে নির্দিষ্ট মেসেজ ডিলিট চিহ্নিত হবে
+    if (selectedMessageIds.length === allVisibleMessageIds.length) {
+      database.ref("messages").remove();
+    } else {
+      selectedMessageIds.forEach(key => {
+        database.ref("messages").child(key).update({ isDeleted: true, text: "", mediaData: "" });
+      });
+    }
     cancelSelection();
   }
 }
 
-function clearAllMessages() {
-  if (confirm("সতর্কতা: চ্যাটের সকল মেসেজ মুছে ফেলা হবে!")) {
-    database.ref("messages").remove();
-    cancelSelection();
-  }
-}
-
-// ১১. রিপ্লাই সেট করা
+// ১১. রিপ্লাই সেট ও বাতিল করা
 function setReply(text, key) {
   replyingToMessage = text;
   replyingToMsgKey = key;
@@ -386,7 +469,7 @@ function cancelReply() {
   document.getElementById("reply-preview-bar").classList.add("hidden");
 }
 
-// ১২. টেক্সটএরিয়া অটো-রিসাইজ ফাংশন
+// ১২. টেক্সটএরিয়া অটো-রিসাইজ
 function autoResizeTextarea(el) {
   el.style.height = "auto";
   el.style.height = (el.scrollHeight) + "px";
