@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>প্রাইভেট চ্যাট</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -23,31 +22,43 @@
 
   <!-- চ্যাট সেকশন -->
   <div id="chat-screen" class="screen hidden">
+    
+    <!-- ১. উপরে ফ্রিজ থাকা হেডার -->
     <div class="chat-header">
-      <div id="user-display">চ্যাট রুম</div> 
-      <button onclick="logout()">লগআউট</button> </div>
+      <div id="user-display">চ্যাট রুম</div>
+      <button onclick="logout()">লগআউট</button>
+    </div>
+
+    <!-- ২. হেডারের ঠিক নিচে সিলেকশন ও ডিলিট বার -->
+    <div id="selection-bar" class="selection-bar hidden">
+      <span id="selected-count">০ টি</span>
+      <div class="selection-actions">
+        <button onclick="deleteSelectedMessages()">🗑️ ডিলিট</button>
+        <button onclick="clearAllMessages()">🔥 সব ডিলিট</button>
+        <button onclick="cancelSelection()">✖ বাতিল</button>
+      </div>
+    </div>
+
+    <!-- ৩. মাঝখানের মেসেজ বক্স -->
     <div id="messages-container"></div>
+
+    <!-- ৪. মেসেজ লেখার বক্সের ঠিক উপরে রিপ্লাই প্রিভিউ (সর্বোচ্চ ২ লাইন) -->
+    <div id="reply-preview-bar" class="reply-bar hidden">
+      <div class="reply-content">
+        <small>রিপ্লাই দেওয়া হচ্ছে:</small>
+        <p id="reply-text"></p>
+      </div>
+      <button class="cancel-reply-btn" onclick="cancelReply()">✖</button>
+    </div>
+
+    <!-- ৫. নিচে ফ্রিজ থাকা মেসেজ লেখার বক্স -->
     <div class="chat-input-area">
-  <span class="media-btn" onclick="triggerFileInput()">📎</span>
-  <input type="file" id="file-input" accept="image/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
-  <textarea id="message-input" rows="1" placeholder="মেসেজ লিখুন..." oninput="autoResizeTextarea(this)"></textarea>
-  <button class="send-btn" onclick="sendMessage()">➤</button>
-</div>
+      <span class="media-btn" onclick="triggerFileInput()">📎</span>
+      <input type="file" id="file-input" accept="image/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
+      <textarea id="message-input" rows="1" placeholder="মেসেজ লিখুন..." oninput="autoResizeTextarea(this)"></textarea>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
 
-<!-- নির্বাচিত মেসেজ ডিলিট ও রিপ্লাই বার (হিডেন থাকবে) -->
-  <div id="selection-bar" class="selection-bar hidden">
-  <span id="selected-count">০ টি সিলেক্টেড</span> <div>
-    <button onclick="deleteSelectedMessages()">🗑️ নির্বাচিতগুলো ডিলিট</button>
-    <button onclick="clearAllMessages()">🔥 সব ক্লিয়ার</button>
-    <button onclick="cancelSelection()">✖️ বাতিল</button>
-  </div>
-</div>
-
-<!-- রিপ্লাই প্রিভিউ বার -->
-<div id="reply-preview-bar" class="reply-bar hidden">
-  <span id="reply-text"></span>
-  <button class="cancel-reply-btn" onclick="cancelReply()">✖</button> 
-  </div>
   </div>
 
   <script src="script.js"></script>
