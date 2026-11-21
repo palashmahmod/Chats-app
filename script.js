@@ -265,43 +265,77 @@ function scrollToMessage(key) {
   }
 }
 
-// ৯. স্লাইড করে রিপ্লাই ও সিলেকশন
+// ৯. স্লাইড করে রিপ্লাই, লং-প্রেস ও ট্যাপ করে সিলেকশন
 function addSwipeAndSelectEvents(element, msgKey, textPreview) {
   let startX = 0;
   let currentX = 0;
+  let isLongPress = false;
+  let timer;
 
-  element.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; });
+  element.addEventListener("touchstart", (e) => {
+    startX = e.touches[0].clientX;
+    isLongPress = false;
+    
+    // লং প্রেস করে প্রথম মেসেজ সিলেকশন
+    timer = setTimeout(() => {
+      isLongPress = true;
+      toggleSelectMessage(msgKey);
+    }, 500);
+  });
+
   element.addEventListener("touchmove", (e) => {
+    clearTimeout(timer);
+    // সিলেকশন মোড চালু থাকলে স্লাইড বন্ধ থাকবে
+    if (selectedMessageIds.length > 0) return;
+
     currentX = e.touches[0].clientX;
     let diff = currentX - startX;
-    if (diff > 0 && diff < 80) element.style.transform = `translateX(${diff}px)`;
+    if (diff > 0 && diff < 80) {
+      element.style.transform = `translateX(${diff}px)`;
+    }
   });
 
   element.addEventListener("touchend", () => {
+    clearTimeout(timer);
     let diff = currentX - startX;
     element.style.transform = `translateX(0px)`;
-    if (diff > 50) setReply(textPreview, msgKey);
+
+    // স্লাইড সম্পন্ন হলে রিপ্লাই ট্রিগার
+    if (diff > 50 && selectedMessageIds.length === 0) {
+      setReply(textPreview, msgKey);
+    }
+
     startX = 0;
     currentX = 0;
   });
 
-  let timer;
-  element.addEventListener("touchstart", () => {
-    timer = setTimeout(() => { toggleSelectMessage(msgKey); }, 600);
+  // ইতিমধ্যে সিলেকশন চালু থাকলে সাধারণ ক্লিকেই বাকি মেসেজ সিলেক্ট/আনসিলেক্ট হবে
+  element.addEventListener("click", () => {
+    if (selectedMessageIds.length > 0 && !isLongPress) {
+      toggleSelectMessage(msgKey);
+    }
   });
-  element.addEventListener("touchend", () => clearTimeout(timer));
-  element.addEventListener("touchmove", () => clearTimeout(timer));
 }
 
 function toggleSelectMessage(key) {
   const index = selectedMessageIds.indexOf(key);
-  if (index > -1) selectedMessageIds.splice(index, 1);
-  else selectedMessageIds.push(key);
+  const wasEmpty = selectedMessageIds.length === 0;
+
+  if (index > -1) {
+    selectedMessageIds.splice(index, 1);
+  } else {
+    selectedMessageIds.push(key);
+  }
 
   const selectionBar = document.getElementById("selection-bar");
   if (selectedMessageIds.length > 0) {
     selectionBar.classList.remove("hidden");
     document.getElementById("selected-count").innerText = `${selectedMessageIds.length} টি সিলেক্টেড`;
+    
+    // প্রথমবার সিলেক্ট হলে ব্রাউজার হিস্ট্রিতে একটি স্টেট যোগ করা (ব্যাক বাটনের জন্য)
+    if (wasEmpty) {
+      history.pushState({ selectionMode: true }, "");
+    }
   } else {
     selectionBar.classList.add("hidden");
   }
@@ -313,6 +347,13 @@ function cancelSelection() {
   document.getElementById("selection-bar").classList.add("hidden");
   loadMessages();
 }
+
+// মোবাইলের ব্যাক বাটন (Back Button) চাপলে সিলেকশন বাতিল হবে
+window.addEventListener("popstate", function(event) {
+  if (selectedMessageIds.length > 0) {
+    cancelSelection();
+  }
+});
 
 // ১০. মুছে ফেলা (isDeleted: true করা)
 function deleteSelectedMessages() {
@@ -336,7 +377,7 @@ function setReply(text, key) {
   replyingToMessage = text;
   replyingToMsgKey = key;
   document.getElementById("reply-preview-bar").classList.remove("hidden");
-  document.getElementById("reply-text").innerText = `রিপ্লাই দেওয়া হচ্ছে: ${text}`;
+  document.getElementById("reply-text").innerText = text;
 }
 
 function cancelReply() {
@@ -344,5 +385,9 @@ function cancelReply() {
   replyingToMsgKey = null;
   document.getElementById("reply-preview-bar").classList.add("hidden");
 }
-// টেক্সটএরিয়া অটো-রিসাইজ ফাংশন 
-function autoResizeTextarea(el) { el.style.height = "auto"; el.style.height = (el.scrollHeight) + "px"; }
+
+// ১২. টেক্সটএরিয়া অটো-রিসাইজ ফাংশন
+function autoResizeTextarea(el) {
+  el.style.height = "auto";
+  el.style.height = (el.scrollHeight) + "px";
+}
