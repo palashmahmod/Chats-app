@@ -29,7 +29,7 @@ html, body {
   display: none !important;
 }
 
-/* লগইন পেজ */
+/* লগইন পেজ ও পাসওয়ার্ড মাস্কিং */
 #login-screen {
   padding: 20px;
   justify-content: center;
@@ -47,6 +47,13 @@ html, body {
   margin-bottom: 12px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 15px;
+}
+
+/* ব্রাউজারকে পাসওয়ার্ড ফিল্ড বুঝতে না দিয়ে ডট দেখানোর স্টাইল */
+.masked-password {
+  -webkit-text-security: disc;
+  text-security: disc;
 }
 
 #login-screen button {
@@ -56,6 +63,7 @@ html, body {
   border: none;
   border-radius: 6px;
   font-weight: bold;
+  cursor: pointer;
 }
 
 #auth-error {
@@ -112,17 +120,22 @@ html, body {
 
 .selection-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .selection-actions button {
   background: #dc3545;
   color: white;
   border: none;
-  padding: 5px 8px;
+  padding: 6px 9px;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
+  font-weight: bold;
+}
+
+#select-all-btn {
+  background: #0288d1;
 }
 
 .selection-actions button:last-child {
@@ -132,14 +145,123 @@ html, body {
 /* মাঝখানের মেসেজ বক্স */
 #messages-container {
   flex: 1;
-  padding: 15px;
+  padding: 15px 10px;
   overflow-y: auto;
   background-color: #efeae2;
   display: flex;
   flex-direction: column;
 }
 
-/* ইনপুট বক্সের ঠিক উপরে রিপ্লাই প্রিভিউ (সর্বোচ্চ ২ লাইন) */
+/* প্রতিটি মেসেজের সারি (গোল চেকবক্স + মেসেজ + ডিলিট আইকন) */
+.message-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  gap: 6px;
+}
+
+.message-row.sent-row {
+  justify-content: flex-end;
+}
+
+.message-row.received-row {
+  justify-content: flex-start;
+}
+
+/* গোল সিলেকশন বাটন */
+.select-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #075e54;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: white;
+  font-weight: bold;
+}
+
+.select-circle.checked {
+  background: #075e54;
+}
+
+/* মেসেজের পাশের ছোট ডিলিট চিহ্ন */
+.msg-delete-icon {
+  font-size: 14px;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.65;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.msg-delete-icon:hover {
+  opacity: 1;
+  color: #dc3545;
+}
+
+/* মেসেজ বাবল */
+.message {
+  max-width: 76%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  position: relative;
+  word-wrap: break-word;
+  touch-action: pan-y;
+  transition: transform 0.2s ease, background-color 0.3s ease;
+  user-select: text; /* চেপে ধরে টেক্সট কপি করা যাবে */
+  -webkit-user-select: text;
+}
+
+.message p {
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.message.sent {
+  background: #dcf8c6;
+}
+
+.message.received {
+  background: #ffffff;
+}
+
+.selected-message {
+  background-color: #b2dfdb !important;
+  outline: 2px solid #075e54;
+}
+
+/* রিপ্লাই মেসেজের ওপরের প্রিভিউ বক্স */
+.reply-quote {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 5px 8px;
+  border-left: 3px solid #075e54;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #444;
+  margin-bottom: 6px;
+  cursor: pointer;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* রিপ্লাইতে ক্লিক করলে মূল মেসেজ হাইলাইট হওয়ার এনিমেশন */
+.highlight-message {
+  background-color: #ffe082 !important;
+  box-shadow: 0 0 12px rgba(255, 193, 7, 0.9);
+  transform: scale(1.02);
+}
+
+/* ইনপুট বক্সের ঠিক উপরে রিপ্লাই প্রিভিউ */
 .reply-bar {
   background: #e1f5fe;
   padding: 8px 12px;
@@ -170,7 +292,7 @@ html, body {
   font-size: 13px;
   color: #333;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* সর্বোচ্চ ২ লাইন দেখাবে */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -242,38 +364,6 @@ html, body {
   flex-shrink: 0;
 }
 
-/* মেসেজ আইটেমস */
-.message {
-  max-width: 78%;
-  padding: 8px 12px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  position: relative;
-  word-wrap: break-word;
-  touch-action: pan-y;
-  transition: transform 0.2s ease;
-  user-select: none; /* চেপে ধরলে টেক্সট কপি মেনু এসে ডিস্টার্ব করবে না */
-}
-
-.message p {
-  white-space: pre-wrap;
-}
-
-.message.sent {
-  align-self: flex-end;
-  background: #dcf8c6;
-}
-
-.message.received {
-  align-self: flex-start;
-  background: #ffffff;
-}
-
-.selected-message {
-  border: 2px solid #075e54 !important;
-  background-color: #b2dfdb !important;
-}
-
 .msg-footer {
   font-size: 10px;
   color: #888;
@@ -283,6 +373,7 @@ html, body {
   justify-content: flex-end;
   align-items: center;
   gap: 4px;
+  user-select: none;
 }
 
 .seen-tick {
@@ -297,20 +388,6 @@ html, body {
 .deleted-msg {
   font-style: italic;
   color: #777 !important;
-}
-
-.reply-quote {
-  background: rgba(0,0,0,0.08);
-  padding: 4px 8px;
-  border-left: 3px solid #075e54;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-bottom: 5px;
-  cursor: pointer;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .media-preview-img, .media-preview-video {
@@ -336,13 +413,4 @@ html, body {
   border: none;
   border-radius: 8px;
   margin-top: 5px;
-}
-
-.highlight-message {
-  animation: highlightAnim 1.5s ease-in-out;
-}
-
-@keyframes highlightAnim {
-  0% { background-color: #fff59d; transform: scale(1.02); }
-  100% { background-color: inherit; transform: scale(1); }
 }
