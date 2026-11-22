@@ -23,6 +23,17 @@
   </div>
 
   <!-- চ্যাট সেকশন -->
+  <!-- ফুল-স্ক্রিন ছবি ও ভিডিও ভিউয়ার মোডাল -->
+  <div id="media-viewer-modal" class="media-modal hidden">
+    <div class="media-modal-header">
+      <a id="modal-download-btn" href="#" download="media" class="modal-btn">📥 ডাউনলোড</a>
+      <button class="modal-close-btn" onclick="closeMediaViewer()">✖ বন্ধ করুন</button>
+    </div>
+    <div class="media-modal-body" id="media-modal-content">
+      <!-- এখানে জাভাস্ক্রিপ্টের মাধ্যমে বড় ছবি বা ভিডিও প্লেয়ার লোড হবে -->
+    </div>
+  </div>
+  
   <div id="chat-screen" class="screen hidden">
     
     <!-- ১. উপরে ফ্রিজ থাকা হেডার -->
