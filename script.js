@@ -20,6 +20,8 @@ let isSelectionMode = false;
 let replyingToMessage = null;
 let replyingToMsgKey = null;
 let isSelectingFile = false;
+let isViewingMedia = false;
+let wakeLock = null;
 
 // সময় ফরম্যাট করার ফাংশন
 function formatTime(timestamp) {
@@ -55,13 +57,13 @@ function clearLoginInputs() {
 }
 
 document.addEventListener("visibilitychange", function() {
-  if (document.hidden && !isSelectingFile) {
+  if (document.hidden && !isSelectingFile && !isViewingMedia) {
     logout();
   }
 });
 
 window.addEventListener("blur", function() {
-  if (!isSelectingFile) {
+  if (!isSelectingFile && !isViewingMedia) {
     logout();
   }
 });
@@ -249,10 +251,13 @@ function loadMessages() {
         }
 
         if (msgData.mediaType === "image") {
-          contentHTML += `<img src="${msgData.mediaData}" class="media-preview-img">
+          contentHTML += `<img src="${msgData.mediaData}" class="media-preview-img" onclick="openMediaViewer('${msgKey}', 'image')">
                           <a href="${msgData.mediaData}" download="image.jpg" class="download-link">📥 ডাউনলোড করুন</a>`;
         } else if (msgData.mediaType === "video") {
-          contentHTML += `<video src="${msgData.mediaData}" controls class="media-preview-video"></video>
+          contentHTML += `<div class="video-thumb-wrapper" onclick="openMediaViewer('${msgKey}', 'video')">
+                            <video src="${msgData.mediaData}#t=0.5" class="media-preview-video" preload="metadata"></video>
+                            <div class="play-overlay-icon">▶</div>
+                          </div>
                           <a href="${msgData.mediaData}" download="video.mp4" class="download-link">📥 ডাউনলোড করুন</a>`;
         } else if (msgData.text) {
           if (msgData.text.includes("youtube.com") || msgData.text.includes("youtu.be")) {
@@ -430,7 +435,9 @@ function cancelSelection() {
 
 // মোবাইলের ব্যাক বাটন চাপলে সিলেকশন বাতিল হবে
 window.addEventListener("popstate", function() {
-  if (isSelectionMode) {
+  if (isViewingMedia) {
+    closeMediaViewer();
+  } else if (isSelectionMode) {
     cancelSelection();
   }
 });
@@ -473,4 +480,54 @@ function cancelReply() {
 function autoResizeTextarea(el) {
   el.style.height = "auto";
   el.style.height = (el.scrollHeight) + "px";
+}
+
+// ১৩. ফুল-স্ক্রিন ছবি ভিউ ও ভিডিও প্লেয়ার ফাংশন
+async function openMediaViewer(msgKey, type) {
+  if (isSelectionMode) return; // ডিলিট সিলেকশন চালু থাকলে ওপেন হবে না
+
+  const targetImgOrVid = document.querySelector(`#msg-${msgKey} ${type === 'image' ? 'img' : 'video'}`);
+  if (!targetImgOrVid) return;
+
+  // ভিডিওর সোর্স থেকে #t=0.5 বাদ দিয়ে আসল ডাটা নেওয়া
+  const mediaSrc = targetImgOrVid.src.replace("#t=0.5", "");
+
+  isViewingMedia = true; // অটো-লগআউট সাময়িকভাবে বন্ধ করা হলো
+
+  // ভিডিও চলার সময় মোবাইলের স্ক্রিন যাতে অফ না হয়ে যায় (Wake Lock API)
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (err) {}
+
+  const modal = document.getElementById("media-viewer-modal");
+  const modalContent = document.getElementById("media-modal-content");
+  const downloadBtn = document.getElementById("modal-download-btn");
+
+  downloadBtn.href = mediaSrc;
+  downloadBtn.download = type === "image" ? "image.jpg" : "video.mp4";
+
+  if (type === "image") {
+    modalContent.innerHTML = `<img src="${mediaSrc}" alt="Full Image">`;
+  } else {
+    modalContent.innerHTML = `<video src="${mediaSrc}" controls autoplay playsinline></video>`;
+  }
+
+  modal.classList.remove("hidden");
+  history.pushState({ mediaViewer: true }, "");
+}
+
+function closeMediaViewer() {
+  const modal = document.getElementById("media-viewer-modal");
+  const modalContent = document.getElementById("media-modal-content");
+
+  modal.classList.add("hidden");
+  modalContent.innerHTML = ""; // ভিডিও প্লে বন্ধ করা হলো
+  isViewingMedia = false; // আবার স্বাভাবিক অটো-লগআউট সেফটি চালু হলো
+
+  // Wake Lock রিলিজ করা
+  if (wakeLock !== null) {
+    wakeLock.release().then(() => { wakeLock = null; });
+  }
 }
